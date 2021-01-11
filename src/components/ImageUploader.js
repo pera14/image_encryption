@@ -20,11 +20,10 @@ const ImageUploader = () =>  {
 
     const imageProcess = () => {
         const cv = document.querySelector("#cv");
-        const cv2 = document.querySelector("#cv");
         const img1 = document.querySelector("#image");
     
         let c = cv.getContext("2d");
-        
+
         let img = new Image()
         img.src = window.URL.createObjectURL(file.data);
         img.onload = () => {

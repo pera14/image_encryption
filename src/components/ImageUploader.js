@@ -7,8 +7,6 @@ const ImageUploader = () =>  {
 
 
     const handleChange = (event) => {
-        console.log('change');
-        console.log(event.target.files);
         const data = {
             url: URL.createObjectURL(event.target.files[0]),
             data: event.target.files[0]

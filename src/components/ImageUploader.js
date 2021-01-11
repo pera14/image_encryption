@@ -24,7 +24,6 @@ const ImageUploader = () =>  {
         const img1 = document.querySelector("#image");
     
         let c = cv.getContext("2d");
-        let c2 = cv2.getContext("2d");
         
         let img = new Image()
         img.src = window.URL.createObjectURL(file.data);

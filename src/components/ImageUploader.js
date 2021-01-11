@@ -39,9 +39,9 @@ const ImageUploader = () =>  {
             var pixels = []
             for (var i = 0; i < imgData.data.length; i += 4) {
                 const pixel = {
-                    r: imgData.data[i] + Math.floor(Math.random() * 100) - 50,
-                    g: imgData.data[i+1] + Math.floor(Math.random() * 100) - 50 ,
-                    b: imgData.data[i+2] + Math.floor(Math.random() * 100) - 50,
+                    r: imgData.data[i] + Math.floor(Math.random() * 255) - 127,
+                    g: imgData.data[i+1] + Math.floor(Math.random() * 255) - 127 ,
+                    b: imgData.data[i+2] + Math.floor(Math.random() * 255) - 127,
                     a: imgData.data[i+3]
                 };
                 pixels.push(pixel);

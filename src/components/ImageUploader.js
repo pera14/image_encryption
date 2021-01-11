@@ -2,7 +2,7 @@ import {useRef, useState} from 'react';
 
 const ImageUploader = () =>  {
     const [file, setFile] = useState(null);
-    const [file_encrypted, setFileEncrypted] = useState(null);
+    const [file_encrypted] = useState(null);
     const file_ref = useRef();
 
 

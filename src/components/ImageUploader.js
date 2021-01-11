@@ -10,7 +10,8 @@ const ImageUploader = () =>  {
         const data = {
             url: URL.createObjectURL(event.target.files[0]),
             data: event.target.files[0]
-        }
+        };
+        
         setFile(data);
 
     }

@@ -10,9 +10,6 @@ const NewtonApproximate = (points) => {
             row.push(0);
         }
         matrix.push(row);
-    }
-
-    for (let i = 0; i < n; i++) {
         matrix[0][i] = chosenPoints[i].y;
     }
 

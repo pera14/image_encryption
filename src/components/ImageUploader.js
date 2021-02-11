@@ -2,7 +2,6 @@ import { useReducer, useRef } from "react";
 import jpeg from "jpeg-js";
 import { encryptKeys, generateEncryptionKeys } from "../util/encrypt";
 import "react-circular-progressbar/dist/styles.css";
-import Loader from "react-loader-spinner";
 
 const ImageUploader = () => {
     const N = 2;

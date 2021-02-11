@@ -1,6 +1,6 @@
 import NewtonApproximate, {solveNewtonApproximation} from "./NewtonApproximate";
 
-const endX = 160;
+const endX = 170;
 const dots = [74, 78, 85, 93]
 export const generateEncryptionKeys = (valueInX0 = 160) => {  
     let points = [];

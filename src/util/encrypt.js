@@ -1,5 +1,4 @@
-import NewtonApproximate from "./NewtonApproximate";
-import { solveNewtonApproximation } from "./util";
+import NewtonApproximate, {solveNewtonApproximation} from "./NewtonApproximate";
 
 const endX = 160;
 const dots = [74, 78, 89, 100]

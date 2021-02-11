@@ -27,6 +27,7 @@ const ImageUploader = () => {
     };
 
     const imageEncrypt = () => {
+        console.log('Pocetak');
         setState({ inProgressEncrypt: true });
         const cv = document.querySelector("#cv");
         const img1 = document.querySelector("#normal_image");
@@ -98,6 +99,7 @@ const ImageUploader = () => {
             const src = URL.createObjectURL(new Blob([jpegImageData.data]));
             setState({ fileEncrypted: src });
             setState({ inProgressEncrypt: false, nextStage: "decryption" });
+            console.log('Ende');
         };
     };
 
@@ -187,9 +189,11 @@ const ImageUploader = () => {
         <div style={{ flex: 1 }}>
             {file && (
                 <div style={{ flexDirection: "row" }}>
-                    <div>
-                        <Loader type="MutatingDots" color="#00BFFF" height={100} width={100} timeout={10000} style={{opacity: inProgressEncrypt ? 1 : 0}} />
-                        {nextStage === "encryption" && <img id="normal_image" className="App-logo" src={file?.url ? file?.url : undefined} alt="" />}
+                    <div style={{position:'relative'}}>
+                        {inProgressEncrypt && <div style={{position: 'absolute', top: 0, bottom: 0, left: 0, right: 0}}>
+                            <div className="donut" ></div>
+                        </div>}
+                        {nextStage === "encryption" && <img id="normal_image" className="App-logo" src={file?.url ? file?.url : undefined} alt="" style={{filter: inProgressEncrypt ? `blur(10px)` : 'unset'}} />}
                         {nextStage === "decryption" && (
                             <img id="encrypted_image" className="App-logo" src={fileEncrypted ? fileEncrypted : undefined} alt="" />
                         )}

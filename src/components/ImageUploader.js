@@ -196,7 +196,7 @@ const ImageUploader = () => {
                         </div>}
                         {nextStage === "encryption" && <img id="normal_image" className="App-logo" src={file?.url ? file?.url : undefined} alt="" style={{filter: inProgressEncrypt ? `blur(10px)` : 'unset'}} />}
                         {nextStage === "decryption" && (
-                            <img id="encrypted_image" className="App-logo" src={fileEncrypted ? fileEncrypted : undefined} alt="" />
+                            <img id="encrypted_image" className="App-logo" src={fileEncrypted ? fileEncrypted : undefined} alt="" style={{filter: inProgressEncrypt ? `blur(10px)` : 'unset'}} />
                         )}
                     </div>
 

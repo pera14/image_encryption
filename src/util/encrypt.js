@@ -1,60 +1,44 @@
 import NewtonApproximate from "./NewtonApproximate";
-import { getValueForX } from "./util";
+import { solveNewtonApproximation } from "./util";
 
-
-export const generateEncryptionKeys = (valueInZero = 255, n = 2) => {
-
+const endX = 160;
+const dots = [74, 78, 89, 100]
+export const generateEncryptionKeys = (valueInX0 = 160) => {  
     let points = [];
-    const zero = {
+    let newPoints = []
+    points[0] = {
         x: 0,
-        y: valueInZero
+        y: valueInX0
     }
-    points.push(zero);
-
-    for(let i = 1; i < n + 1; i++){
-        const roof = Math.min(valueInZero + 50, 255);
-        const floor = Math.max(valueInZero + 50, 0);
-        const value = {
-            x: i * 20,
-            y: Math.random() * roof + floor
-        }
-        points.push(value);
+    points[1] = {
+        x: endX / 2,
+        y: Math.round(Math.random() * 255)
     }
-    // console.log("Points: ",points);
-    const coefficients = NewtonApproximate(points);
-
-    // console.log("Koeficijenti: ",coefficients);
-    const newPoints = []
+    points[2] = {
+        x: endX,
+        y: valueInX0
+    }
+    const {b, x0} =  NewtonApproximate(points);
     for(let i = 0; i < 4; i++){
-        let x;
-        let y;
-        
-        x = i * (n*20)/3;
-        y = getValueForX(x, coefficients);
-        if(y > 280 || y < -10)
-            console.log("Omaseno: ",y);
-        const point = {x, y}
-        newPoints.push(point);
+        const x = dots[i];
+        const y = solveNewtonApproximation(x, b, x0);
+        newPoints.push(y);
     }
-    // console.log(points);
     return newPoints;
 }
 
 
-export const encryptKeys = (keys, n) => {
+export const encryptKeys = (keys) => {
     let points = [];
     for(let i = 1; i < keys.length; i++){
         const value = {
-            x: i * 20,
+            x:  dots[i],
             y:  keys[i]
         }
         points.push(value);
     }
-    // console.log(points);
-
-    const coefficients = NewtonApproximate(points);
-    
-    return getValueForX(0, coefficients);
+    const {b, x0} = NewtonApproximate(points);
+    return Math.max(Math.min(solveNewtonApproximation(0, b,x0), 255),0);
 }
 
 

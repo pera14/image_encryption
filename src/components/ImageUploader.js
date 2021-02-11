@@ -1,6 +1,8 @@
 import { useReducer, useRef } from "react";
 import jpeg from "jpeg-js";
-import {encryptKeys, generateEncryptionKeys} from "../util/encrypt";
+import { encryptKeys, generateEncryptionKeys } from "../util/encrypt";
+import "react-circular-progressbar/dist/styles.css";
+import Loader from "react-loader-spinner";
 
 const ImageUploader = () => {
     const N = 2;
@@ -9,8 +11,10 @@ const ImageUploader = () => {
         fileEncrypted: null,
         inProgressEncrypt: false,
         inProgressDecrypt: false,
+        percentage: 0,
+        nextStage: "encryption",
     });
-    const { file, fileEncrypted, inProgressEncrypt, inProgressDecrypt } = state;
+    const { file, fileEncrypted, inProgressEncrypt, nextStage } = state;
 
     const file_ref = useRef();
 
@@ -23,7 +27,6 @@ const ImageUploader = () => {
     };
 
     const imageEncrypt = () => {
-
         setState({ inProgressEncrypt: true });
         const cv = document.querySelector("#cv");
         const img1 = document.querySelector("#normal_image");
@@ -42,13 +45,13 @@ const ImageUploader = () => {
             c.drawImage(img1, 0, 0, w, h);
 
             var imgData = c.getImageData(0, 0, w, h);
-            var frameData = new Buffer(w * 2 * (h * 2) * 4);
-
+            var frameData = new Buffer(w * h * 4 * 4);
+            console.log("Frame data length: ", imgData.data.length);
             // get color pixels rgba
             var pixels = [];
             for (var i = 0; i < imgData.data.length; i += 4) {
                 const pixel = {
-                    r: imgData.data[i],
+                    r: imgData.data[i + 0],
                     g: imgData.data[i + 1],
                     b: imgData.data[i + 2],
                     a: imgData.data[i + 3],
@@ -56,47 +59,57 @@ const ImageUploader = () => {
                 pixels.push(pixel);
             }
             console.log("Kreirao pixel buffer...");
-            let frameCounter = 0;
             const wh = w * h;
+            console.log(`wh: ${wh} - w: ${w}, h: ${h}`);
+            console.log(`Numebr of pixels: ${pixels.length}`);
             for (const i in pixels) {
+                const index = parseInt(i);
                 const points_r = generateEncryptionKeys(pixels[i].r, N);
                 const points_g = generateEncryptionKeys(pixels[i].g, N);
                 const points_b = generateEncryptionKeys(pixels[i].b, N);
-                const points_a = generateEncryptionKeys(pixels[i].a, N);
-                for (let imageId = 0; imageId < N + 2; imageId++) {
-                    frameData[imageId * wh + (i * 4) + 0] = points_r[imageId];
-                    frameData[imageId * wh + (i + 4) * 1] = points_g[imageId];
-                    frameData[imageId * wh + (i + 4) * 2] = points_b[imageId];
-                    frameData[imageId * wh + (i + 4) * 3] = points_a[imageId];
+                const points_a = [0, 0, 0, 0];
+                if (index === 14) {
+                    console.log(points_r, pixels[i].r);
+                    console.log(points_g, pixels[i].g);
+                    console.log(points_b, pixels[i].b);
+                    console.log(points_a, pixels[i].a);
+                }
+                for (let frame = 0; frame < N; frame++) {
+                    frameData[(frame + Math.floor(index / w)) * w * 4 + index * 4 + 0] = points_r[frame];
+                    frameData[(frame + Math.floor(index / w)) * w * 4 + index * 4 + 1] = points_g[frame];
+                    frameData[(frame + Math.floor(index / w)) * w * 4 + index * 4 + 2] = points_b[frame];
+                    frameData[(frame + Math.floor(index / w)) * w * 4 + index * 4 + 3] = points_a[frame];
+                }
+                for (let frame = 2; frame < N + 2; frame++) {
+                    frameData[wh * 8 + ((frame % 2) + Math.floor(index / w)) * w * 4 + index * 4 + 0] = points_r[frame];
+                    frameData[wh * 8 + ((frame % 2) + Math.floor(index / w)) * w * 4 + index * 4 + 1] = points_g[frame];
+                    frameData[wh * 8 + ((frame % 2) + Math.floor(index / w)) * w * 4 + index * 4 + 2] = points_b[frame];
+                    frameData[wh * 8 + ((frame % 2) + Math.floor(index / w)) * w * 4 + index * 4 + 3] = points_a[frame];
                 }
             }
             console.log("Dobio sve nove pixele...");
-
-            console.log(`FrameCounter: ${frameCounter} \t FrameData length: ${frameData.length}`);
-
             var rawImageData = {
                 data: frameData,
                 width: w * 2,
                 height: h * 2,
             };
 
-            var jpegImageData = jpeg.encode(rawImageData);
-            const src = URL.createObjectURL(new Blob([jpegImageData.data], { type: file.data.type } /* (1) */));
+            var jpegImageData = jpeg.encode(rawImageData, 100);
+            const src = URL.createObjectURL(new Blob([jpegImageData.data]));
             setState({ fileEncrypted: src });
-            setState({ inProgressEncrypt: false });
+            setState({ inProgressEncrypt: false, nextStage: "decryption" });
         };
     };
 
-
     const imageDecrypt = () => {
         setState({ inProgressEncrypt: true });
-        const cv = document.querySelector("#cv");
+        const cv = document.querySelector("#cv2");
         const img1 = document.querySelector("#encrypted_image");
 
         let c = cv.getContext("2d");
 
         let img = new Image();
-        img.src = window.URL.createObjectURL(file.data);
+        img.src = fileEncrypted;
         img.onload = () => {
             const w = img.width;
             const h = img.height;
@@ -106,47 +119,61 @@ const ImageUploader = () => {
             c.drawImage(img1, 0, 0, w, h);
 
             var imgData = c.getImageData(0, 0, w, h);
-            var frameData = new Buffer(w/2 * h/2  * 4);
-
-            let frameCounter = 0;
-            const wh = w * h / 4; // dimenzije slike
-
-            for (var pixelId = 0; pixelId < imgData.data.length / 4; pixelId += 4) {
+            var frameData = new Buffer(w * h);
+            let pixelPointer = 0;
+            const wh = (w * h) / 4;
+            console.log(`Image data length: ${imgData.data.length}`);
+            console.log(`wh: ${wh} - w: ${w}, h: ${h}`);
+            const oldW = w / 2;
+            for (var pixelId = 0; pixelId < imgData.data.length / 16; pixelId++) {
                 const pixelKeys_r = [];
                 const pixelKeys_g = [];
                 const pixelKeys_b = [];
                 const pixelKeys_a = [];
-                for(let imageId = 0; imageId< 4; imageId++){
-                    pixelKeys_r.push(imgData.data[imageId * wh + pixelId])
-                    pixelKeys_g.push(imgData.data[imageId * wh + pixelId + 1])
-                    pixelKeys_b.push(imgData.data[imageId * wh + pixelId + 2])
-                    pixelKeys_a.push(imgData.data[imageId * wh + pixelId + 3])
+                for (let frame = 0; frame < 2; frame++) {
+                    pixelKeys_r.push(imgData.data[(frame + Math.floor(pixelId / oldW)) * oldW * 4 + pixelId * 4 + 0]);
+                    pixelKeys_g.push(imgData.data[(frame + Math.floor(pixelId / oldW)) * oldW * 4 + pixelId * 4 + 1]);
+                    pixelKeys_b.push(imgData.data[(frame + Math.floor(pixelId / oldW)) * oldW * 4 + pixelId * 4 + 2]);
+                    pixelKeys_a.push(imgData.data[(frame + Math.floor(pixelId / oldW)) * oldW * 4 + pixelId * 4 + 3]);
                 }
-                frameData[frameCounter++] = encryptKeys(pixelKeys_r);
-                frameData[frameCounter++] = encryptKeys(pixelKeys_g);
-                frameData[frameCounter++] = encryptKeys(pixelKeys_b);
-                frameData[frameCounter++] = encryptKeys(pixelKeys_a);
+                for (let frame = 2; frame < 4; frame++) {
+                    pixelKeys_r.push(imgData.data[wh * 8 + ((frame % 2) + Math.floor(pixelId / oldW)) * oldW * 4 + pixelId * 4 + 0]);
+                    pixelKeys_g.push(imgData.data[wh * 8 + ((frame % 2) + Math.floor(pixelId / oldW)) * oldW * 4 + pixelId * 4 + 1]);
+                    pixelKeys_b.push(imgData.data[wh * 8 + ((frame % 2) + Math.floor(pixelId / oldW)) * oldW * 4 + pixelId * 4 + 2]);
+                    pixelKeys_a.push(imgData.data[wh * 8 + ((frame % 2) + Math.floor(pixelId / oldW)) * oldW * 4 + pixelId * 4 + 3]);
+                }
+                if (pixelId === 14) {
+                    console.log(pixelKeys_r, encryptKeys(pixelKeys_r));
+                    console.log(pixelKeys_g, encryptKeys(pixelKeys_g));
+                    console.log(pixelKeys_b, encryptKeys(pixelKeys_b));
+                    console.log(pixelKeys_a);
+                }
+
+                frameData[pixelPointer++] = encryptKeys(pixelKeys_r);
+                frameData[pixelPointer++] = encryptKeys(pixelKeys_g);
+                frameData[pixelPointer++] = encryptKeys(pixelKeys_b);
+                frameData[pixelPointer++] = 0;
             }
-            
             var rawImageData = {
                 data: frameData,
-                width: w * 2,
-                height: h * 2,
+                width: w / 2,
+                height: h / 2,
             };
 
+            console.log(rawImageData);
+
             var jpegImageData = jpeg.encode(rawImageData);
-            const src = URL.createObjectURL(new Blob([jpegImageData.data], { type: file.data.type } /* (1) */));
+            const src = URL.createObjectURL(new Blob([jpegImageData.data]));
             const data = {
                 data: file.data,
-                url: src
-            }
+                url: src,
+            };
             setState({ file: data });
-            setState({ inProgressEncrypt: false });
+            setState({ inProgressEncrypt: false, nextStage: "encryption" });
         };
-    }
+    };
 
     const pressInput = () => {
-        console.log("Input click!");
         const button = file_ref.current;
         button.click();
     };
@@ -156,41 +183,31 @@ const ImageUploader = () => {
         setState({ file: false, fileEncrypted: false });
     };
 
-    const _generate = () => {
-        const points = generateEncryptionKeys();
-        var frameData = new Buffer(3);
-        for (const i in points) {
-            frameData[i] = points[i].y;
-        }
-        console.log(frameData);
-    };
-
     return (
         <div style={{ flex: 1 }}>
             {file && (
                 <div style={{ flexDirection: "row" }}>
                     <div>
-                        <img id="normal_image" className="App-logo" src={file?.url} alt="" />
-                        <img id="encrypted_image" className="App-logo" src={fileEncrypted} alt="" />
+                        <Loader type="MutatingDots" color="#00BFFF" height={100} width={100} timeout={10000} style={{opacity: inProgressEncrypt ? 1 : 0}} />
+                        {nextStage === "encryption" && <img id="normal_image" className="App-logo" src={file?.url ? file?.url : undefined} alt="" />}
+                        {nextStage === "decryption" && (
+                            <img id="encrypted_image" className="App-logo" src={fileEncrypted ? fileEncrypted : undefined} alt="" />
+                        )}
                     </div>
 
                     <div style={{ flexDirection: "column", justifyContent: "space-between", flex: 1 }}>
                         <button style={{ marginRight: 5 }} onClick={removeImage}>
                             Remove image
                         </button>
-                        <button style={{ marginLeft: 5, marginRight: 5 }} onClick={imageEncrypt} disabled={inProgressEncrypt}>
-                            {inProgressEncrypt ? "In progress" : "Encrypt image"}
-                        </button>
-                        <button style={{ marginLeft: 5, marginRight: 5 }} onClick={imageDecrypt} disabled={inProgressDecrypt}>
-                            {inProgressDecrypt ? "In progress" : "Dencrypt image"}
-                        </button>
-                        <button style={{ marginLeft: 5 }} onClick={_generate}>
-                            Generate polynomial
+                        <button
+                            style={{ marginLeft: 5, marginRight: 5 }}
+                            onClick={nextStage === "encryption" ? imageEncrypt : imageDecrypt}
+                            disabled={inProgressEncrypt}>
+                            {nextStage === "encryption" ? "Encrypt image" : "Decrypt image"}
                         </button>
                     </div>
                 </div>
             )}
-
             {!file && (
                 <div
                     onClick={pressInput}
@@ -201,9 +218,9 @@ const ImageUploader = () => {
 
             {/* Hidden content */}
             <div>
-                <input ref={file_ref} type="file" onChange={handleChange} style={{ display: "none" }} />
-                <canvas id="cv" style={{display: "none", position:'absolute'}} />
-                <canvas id="cv2" style={{display: "none", position:'absolute'}} />
+                <input ref={file_ref} type="file" onChange={handleChange} style={{ display: "none" }} accept="image/*" />
+                <canvas id="cv" style={{ display: "none" }} />
+                <canvas id="cv2" style={{ display: "none" }} />
             </div>
             {/*  */}
         </div>

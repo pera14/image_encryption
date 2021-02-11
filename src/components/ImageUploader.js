@@ -190,7 +190,9 @@ const ImageUploader = () => {
                 <div style={{ flexDirection: "row" }}>
                     <div style={{position:'relative'}}>
                         {inProgressEncrypt && <div style={{position: 'absolute', top: 0, bottom: 0, left: 0, right: 0}}>
-                            <div className="donut" ></div>
+                            <div className={"ddonut"}>
+                                <div className="donut" ></div>
+                            </div>
                         </div>}
                         {nextStage === "encryption" && <img id="normal_image" className="App-logo" src={file?.url ? file?.url : undefined} alt="" style={{filter: inProgressEncrypt ? `blur(10px)` : 'unset'}} />}
                         {nextStage === "decryption" && (

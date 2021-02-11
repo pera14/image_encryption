@@ -65,6 +65,9 @@ button{
   width: 30px;
   height: 30px;
   animation: donut-spin 1.2s linear infinite;
+}
+
+.ddonut{
   margin: 0;
   position: absolute;
   top: 50%;
